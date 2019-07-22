@@ -1,9 +1,9 @@
 package com.example.secretmessages;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -14,6 +14,10 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
+import android.widget.Toast;
+
+import java.text.DateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     EditText txtIn;
@@ -21,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     EditText txtOut;
     SeekBar sb;
     Button btn;
+    Button btn2;
     public String encode( String message, int keyVal ) {
         String output = "";
         char key = (char) keyVal;
@@ -66,6 +71,12 @@ public class MainActivity extends AppCompatActivity {
         txtKey = (EditText)findViewById(R.id.txtKey);
         sb = (SeekBar)findViewById(R.id.seekBar);
         btn = (Button)findViewById(R.id.button);
+        btn2 = (Button)findViewById(R.id.button2);
+        Intent receivedIntent = getIntent();
+        String receivedText = receivedIntent.getStringExtra(Intent.EXTRA_TEXT);
+        if (receivedText != null) {
+            txtIn.setText(receivedText);
+        }
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,6 +85,35 @@ public class MainActivity extends AppCompatActivity {
                 String message = txtIn.getText().toString();
                 String output = encode(message, key);
                 txtOut.setText(output);
+                sb.setProgress(key + 13);
+            }
+        });
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String message = txtOut.getText().toString();
+                txtIn.setText(message);
+                txtOut.setText("");
+            }
+        });
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                int key = sb.getProgress() - 13;
+                String message = txtIn.getText().toString();
+                String output = encode(message, key);
+                txtOut.setText(output);
+                txtKey.setText("" + key);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
 
@@ -81,8 +121,18 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Secret Message " +
+                        DateFormat.getDateTimeInstance().format(new Date()));
+                shareIntent.putExtra(Intent.EXTRA_TEXT, txtOut.getText().toString());
+                try {
+                    startActivity(Intent.createChooser(shareIntent, "Share message..."));
+                    finish();
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(MainActivity.this, "Error: Couldn't share.",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
